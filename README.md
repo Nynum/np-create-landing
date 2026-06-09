@@ -1,5 +1,10 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## 📚 เอกสารทีม
+
+- **[ระบบ Tracking & Retargeting](docs/TRACKING.md)** — event, audience ladder,
+  Server CAPI, consent/PDPA, SEO และวิธีตั้งค่า/ทดสอบสำหรับการยิงแอด
+
 ## Getting Started
 
 First, run the development server:
