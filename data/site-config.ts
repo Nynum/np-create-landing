@@ -16,9 +16,14 @@ export const siteConfig = {
     "เอเจนซี่การตลาดออนไลน์",
   ],
   url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://nynum.com",
+  lineOa: {
+    id: "@nynumads",
+    // ลิงก์เพิ่มเพื่อน LINE Official Account (เด้งเข้าหน้าเพิ่มเพื่อนโดยตรง)
+    addFriend: "https://line.me/R/ti/p/%40nynumads",
+  },
   contactExternal: {
     productAds: "https://npcreate.co.th/product-ads",
-    contactMarketing: "https://npcreate.co.th/contact",
+    contactMarketing: "https://line.me/R/ti/p/%40nynumads",
     registerAgent: "https://npcreate.co.th/register",
   },
   social: {

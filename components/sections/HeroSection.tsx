@@ -39,7 +39,7 @@ export default function HeroSection() {
           alt="NP Create — Top Agency ROI 30+ คนแรกของประเทศไทย"
           fill
           priority
-          quality={90}
+          quality={75}
           sizes="100vw"
           className="
             object-cover
