@@ -14,6 +14,7 @@ import SectionDots from "@/components/layout/SectionDots";
 import Trackers, { GTMNoScript } from "@/components/tracking/Trackers";
 import AttributionCapture from "@/components/tracking/AttributionCapture";
 import EngagementTracker from "@/components/tracking/EngagementTracker";
+import ConsentManager from "@/components/consent/ConsentManager";
 import "./globals.css";
 
 const inter = Inter({
@@ -72,6 +73,7 @@ export default function RootLayout({
         <SectionDots />
         {children}
         <FloatingActionBar />
+        <ConsentManager />
         <Analytics />
         <SpeedInsights />
       </body>

@@ -1,5 +1,6 @@
 import { siteConfig } from "@/data/site-config";
 import { MessageCircle, Globe } from "lucide-react";
+import ConsentReopenLink from "@/components/consent/ConsentReopenLink";
 
 export default function Footer() {
   return (
@@ -60,8 +61,11 @@ export default function Footer() {
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto mt-10 pt-6 border-t border-white/5 text-xs text-white/40 text-center">
-        © {new Date().getFullYear()} {siteConfig.company}. All rights reserved.
+      <div className="max-w-5xl mx-auto mt-10 pt-6 border-t border-white/5 text-xs text-white/40 flex flex-col sm:flex-row items-center justify-center gap-x-3 gap-y-1 text-center">
+        <span>
+          © {new Date().getFullYear()} {siteConfig.company}. All rights reserved.
+        </span>
+        <ConsentReopenLink className="underline-offset-2 hover:text-white/70 hover:underline" />
       </div>
     </footer>
   );
