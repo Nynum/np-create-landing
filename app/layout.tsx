@@ -12,6 +12,8 @@ import FloatingActionBar from "@/components/layout/FloatingActionBar";
 import ScrollProgressBar from "@/components/layout/ScrollProgressBar";
 import SectionDots from "@/components/layout/SectionDots";
 import Trackers, { GTMNoScript } from "@/components/tracking/Trackers";
+import AttributionCapture from "@/components/tracking/AttributionCapture";
+import EngagementTracker from "@/components/tracking/EngagementTracker";
 import "./globals.css";
 
 const inter = Inter({
@@ -64,6 +66,8 @@ export default function RootLayout({
       </head>
       <body className="min-h-screen bg-black text-white antialiased">
         <GTMNoScript />
+        <AttributionCapture />
+        <EngagementTracker />
         <ScrollProgressBar />
         <SectionDots />
         {children}

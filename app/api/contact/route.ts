@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { Resend } from "resend";
 import { z } from "zod";
+import { parseAttribution } from "@/lib/attribution";
+import { sendServerEvents, getClientIp } from "@/lib/capi";
 
 export const runtime = "nodejs";
 
@@ -8,6 +10,7 @@ const schema = z.object({
   name: z.string().trim().min(2).max(120),
   contact: z.string().trim().min(5).max(200),
   message: z.string().trim().min(10).max(5000),
+  event_id: z.string().trim().max(100).optional(),
 });
 
 export async function POST(req: Request) {
@@ -27,6 +30,25 @@ export async function POST(req: Request) {
   }
 
   const { name, contact, message } = parsed.data;
+
+  // ── Server-side Lead conversion (Meta CAPI + TikTok Events API) ──
+  // ยิงทันทีที่ฟอร์มผ่าน validation (lead เกิดจริงแล้ว ไม่ขึ้นกับผลส่งอีเมล)
+  // ใช้ event_id เดียวกับ browser pixel เพื่อ dedup — no-op ถ้ายังไม่ตั้ง token
+  const attribution = parseAttribution(req.headers.get("cookie"));
+  await sendServerEvents({
+    eventName: "lead",
+    eventId: parsed.data.event_id ?? globalThis.crypto.randomUUID(),
+    eventSourceUrl: attribution.attr.landing_page,
+    clientIp: getClientIp(req.headers),
+    userAgent: req.headers.get("user-agent") ?? undefined,
+    contact,
+    custom: {
+      content_name: "contact_form",
+      utm_source: attribution.attr.utm_source,
+      utm_campaign: attribution.attr.utm_campaign,
+    },
+    attribution,
+  });
 
   const apiKey = process.env.RESEND_API_KEY;
   const from = process.env.RESEND_FROM ?? "no-reply@nynum.com";

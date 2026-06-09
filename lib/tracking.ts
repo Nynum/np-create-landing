@@ -29,14 +29,31 @@ declare global {
   }
 }
 
+/** Generate an event_id for browser↔server deduplication (Meta/TikTok). */
+export function eventId(): string {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return crypto.randomUUID();
+  }
+  return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+type TrackOptions = {
+  /** Same id sent to the server CAPI so the two events deduplicate. */
+  eventID?: string;
+};
+
 /**
  * Fan out a single event to every configured pixel.
  * - GA4 + GTM via dataLayer/gtag
- * - Meta Pixel via fbq
- * - TikTok Pixel via ttq.track
+ * - Meta Pixel via fbq (with eventID for CAPI dedup)
+ * - TikTok Pixel via ttq.track (with event_id for Events API dedup)
  * - LINE Tag via _lt
  */
-export function track(eventName: string, params: Record<string, unknown> = {}) {
+export function track(
+  eventName: string,
+  params: Record<string, unknown> = {},
+  opts: TrackOptions = {}
+) {
   if (typeof window === "undefined") return;
 
   // GA4 (gtag)
@@ -47,17 +64,22 @@ export function track(eventName: string, params: Record<string, unknown> = {}) {
 
   // Meta Pixel — map common events to Standard Events when possible
   const metaEvent = META_EVENT_MAP[eventName] ?? "CustomEvent";
+  const metaOpts = opts.eventID ? { eventID: opts.eventID } : undefined;
   if (metaEvent === "CustomEvent") {
-    window.fbq?.("trackCustom", eventName, params);
+    window.fbq?.("trackCustom", eventName, params, metaOpts);
   } else {
-    window.fbq?.("track", metaEvent, params);
+    window.fbq?.("track", metaEvent, params, metaOpts);
   }
 
-  // TikTok Pixel
-  window.ttq?.track(TIKTOK_EVENT_MAP[eventName] ?? eventName, params);
+  // TikTok Pixel — event_id travels inside the properties object
+  const ttEvent = TIKTOK_EVENT_MAP[eventName] ?? eventName;
+  window.ttq?.track(
+    ttEvent,
+    opts.eventID ? { ...params, event_id: opts.eventID } : params
+  );
 
   // LINE Tag conversion
-  if (eventName === "lead" || eventName === "conversion") {
+  if (eventName === "lead" || eventName === "contact" || eventName === "conversion") {
     window._lt?.("send", "cv", { type: eventName });
   }
 }
@@ -66,7 +88,11 @@ const META_EVENT_MAP: Record<string, string> = {
   lead: "Lead",
   contact: "Contact",
   view_content: "ViewContent",
-  click_cta: "InitiateCheckout",
+  view_portfolio: "ViewContent",
+  click_cta: "Contact",
+  form_start: "InitiateCheckout",
+  scroll_depth: "CustomEvent",
+  engaged_30s: "CustomEvent",
   search: "Search",
   page_view: "PageView",
 };
@@ -75,5 +101,7 @@ const TIKTOK_EVENT_MAP: Record<string, string> = {
   lead: "SubmitForm",
   contact: "Contact",
   view_content: "ViewContent",
-  click_cta: "ClickButton",
+  view_portfolio: "ViewContent",
+  click_cta: "Contact",
+  form_start: "InitiateCheckout",
 };

@@ -1,7 +1,7 @@
 "use client";
 
 import { siteConfig } from "@/data/site-config";
-import { track } from "@/lib/tracking";
+import { track, eventId } from "@/lib/tracking";
 
 /**
  * FloatingActionBar — NP Create
@@ -17,13 +17,32 @@ export default function FloatingActionBar() {
   const href = siteConfig.contactExternal.contactMarketing;
   const lineId = siteConfig.lineOa.id;
 
-  const handleClick = () =>
-    track("click_cta", {
-      label: "ติดต่อดูแลการตลาด",
-      href,
-      position: 1,
-      channel: "line_oa",
-    });
+  const handleClick = () => {
+    // intent "contact" ที่ร้อนสุดที่เก็บได้บนเว็บ (ก่อนผู้ใช้ออกไปแชต LINE)
+    const id = eventId(); // dedup browser pixel ↔ server CAPI
+    track(
+      "contact",
+      { label: "ติดต่อดูแลการตลาด", channel: "line_oa", href },
+      { eventID: id }
+    );
+    // ยิง Server CAPI ขนาน (keepalive — ส่งได้แม้หน้ากำลังเปลี่ยน/แท็บใหม่)
+    try {
+      fetch("/api/track-lead", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        keepalive: true,
+        body: JSON.stringify({
+          event_id: id,
+          event_name: "contact",
+          content_name: "line_oa",
+          event_source_url:
+            typeof window !== "undefined" ? window.location.href : undefined,
+        }),
+      }).catch(() => {});
+    } catch {
+      /* no-op */
+    }
+  };
 
   return (
     <div

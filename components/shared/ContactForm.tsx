@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Loader2, Send, CheckCircle2, AlertCircle } from "lucide-react";
+import { track, eventId } from "@/lib/tracking";
 
 const schema = z.object({
   name: z.string().trim().min(2, "กรุณากรอกชื่อ"),
@@ -20,6 +21,7 @@ type FormValues = z.infer<typeof schema>;
 export default function ContactForm() {
   const [status, setStatus] = useState<"idle" | "ok" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const startedRef = useRef(false);
 
   const {
     register,
@@ -31,21 +33,32 @@ export default function ContactForm() {
     mode: "onTouched",
   });
 
+  // ยิง form_start ครั้งเดียวเมื่อผู้ใช้เริ่มกรอก (จับคน "เกือบเป็น lead")
+  const handleFirstInteraction = () => {
+    if (startedRef.current) return;
+    startedRef.current = true;
+    track("form_start", { form: "contact" });
+  };
+
   const onSubmit = async (data: FormValues) => {
     setStatus("idle");
     setErrorMsg(null);
+    const id = eventId(); // dedup browser ↔ server CAPI
     try {
       const res = await fetch("/api/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify({ ...data, event_id: id }),
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
         throw new Error(j.error ?? "ส่งไม่สำเร็จ");
       }
+      // Lead event (browser pixel) — server route ยิง CAPI ด้วย event_id เดียวกัน
+      track("lead", { form: "contact" }, { eventID: id });
       setStatus("ok");
       reset();
+      startedRef.current = false;
     } catch (e) {
       setStatus("error");
       setErrorMsg(e instanceof Error ? e.message : "ส่งไม่สำเร็จ");
@@ -53,7 +66,12 @@ export default function ContactForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
+    <form
+      onSubmit={handleSubmit(onSubmit)}
+      onFocus={handleFirstInteraction}
+      className="space-y-4"
+      noValidate
+    >
       <Field
         label="ชื่อ"
         error={errors.name?.message}

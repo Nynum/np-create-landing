@@ -5,6 +5,7 @@ import useEmblaCarousel from "embla-carousel-react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import SectionHeading from "@/components/shared/SectionHeading";
 import { caseStudies } from "@/data/case-studies";
+import { track } from "@/lib/tracking";
 
 export default function PortfolioCarousel() {
   const [emblaRef, embla] = useEmblaCarousel({
@@ -22,10 +23,24 @@ export default function PortfolioCarousel() {
   useEffect(() => {
     if (!embla) return;
     setSnaps(embla.scrollSnapList());
-    const onSelect = () => setSelectedIndex(embla.selectedScrollSnap());
-    onSelect();
+    const viewed = new Set<number>();
+    const onSelect = () => {
+      const idx = embla.selectedScrollSnap();
+      setSelectedIndex(idx);
+      // ผู้ใช้เลื่อนดู case study เอง = สัญญาณสนใจสูง (T3) → ยิง view_portfolio
+      if (!viewed.has(idx)) {
+        viewed.add(idx);
+        const c = caseStudies[idx];
+        track("view_portfolio", {
+          content_id: c?.id,
+          content_name: c?.title,
+          content_category: c?.category,
+          slide: idx + 1,
+        });
+      }
+    };
     embla.on("select", onSelect);
-    embla.on("reInit", onSelect);
+    embla.on("reInit", () => setSelectedIndex(embla.selectedScrollSnap()));
   }, [embla]);
 
   return (
