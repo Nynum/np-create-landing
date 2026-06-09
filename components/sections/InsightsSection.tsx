@@ -22,7 +22,7 @@ export default function InsightsSection() {
         {insights.map((p, i) => (
           <motion.a
             key={p.id}
-            href={p.href ?? "#"}
+            href={`/insights/${p.slug}`}
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-60px" }}

@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { siteConfig } from "@/data/site-config";
 import { verification } from "@/lib/tracking";
+import type { Insight } from "@/data/insights";
+import { services } from "@/data/services";
 
 export const baseMetadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
@@ -113,5 +115,75 @@ export function localBusinessJsonLd() {
       addressCountry: "TH",
     },
     sameAs: siteConfig.social ? Object.values(siteConfig.social) : [],
+  };
+}
+
+/** บริการทั้งหมด → OfferCatalog (ตรงกับ Services section บนหน้าแรก) */
+export function servicesJsonLd() {
+  return {
+    "@context": "https://schema.org",
+    "@type": "OfferCatalog",
+    "@id": `${siteConfig.url}#services`,
+    name: `บริการของ ${siteConfig.shortName}`,
+    url: siteConfig.url,
+    provider: { "@id": `${siteConfig.url}#organization` },
+    itemListElement: services.map((s) => ({
+      "@type": "Offer",
+      itemOffered: {
+        "@type": "Service",
+        name: s.title,
+        description: s.description,
+        provider: { "@id": `${siteConfig.url}#organization` },
+        areaServed: "TH",
+      },
+    })),
+  };
+}
+
+/** บทความ → BlogPosting */
+export function articleJsonLd(insight: Insight) {
+  const url = `${siteConfig.url}/insights/${insight.slug}`;
+  return {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    "@id": `${url}#article`,
+    headline: insight.title,
+    description: insight.excerpt,
+    inLanguage: "th-TH",
+    datePublished: insight.date,
+    dateModified: insight.updated ?? insight.date,
+    articleSection: insight.category,
+    keywords: insight.keywords?.join(", "),
+    image: `${siteConfig.url}/og-image.png`,
+    author: { "@id": `${siteConfig.url}#organization` },
+    publisher: { "@id": `${siteConfig.url}#organization` },
+    mainEntityOfPage: { "@type": "WebPage", "@id": url },
+  };
+}
+
+/** เส้นทางนำทาง → BreadcrumbList */
+export function breadcrumbJsonLd(items: { name: string; url: string }[]) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: items.map((item, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      name: item.name,
+      item: item.url,
+    })),
+  };
+}
+
+/** คำถามที่พบบ่อย → FAQPage (ใช้เมื่อมี FAQ แสดงบนหน้าเท่านั้น) */
+export function faqJsonLd(faqs: { q: string; a: string }[]) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: faqs.map((f) => ({
+      "@type": "Question",
+      name: f.q,
+      acceptedAnswer: { "@type": "Answer", text: f.a },
+    })),
   };
 }
